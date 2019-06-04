@@ -12,6 +12,8 @@
 const int max_path = 1000;
 const int max_host = 100;
 
+char userpath[100]="/home/";
+
 void 
 printPrompt() {
     char *user = getenv("USER");
@@ -42,9 +44,10 @@ executeBuiltInCommand(char **cmd) {
         // "cd " and "cd ~" change curr directory to /home/username
         if (cmd[1] == NULL || strcmp(cmd[1], "~") == 0){
             char *user = getenv("USER");
-            char *path = "/home/";
-            strcat(path, user);
-            if (chdir(path) == -1)
+            for (int i=0; i<strlen(user);i++)
+                userpath[i+6] = user[i];
+            //char *path = "/home/jeffxu";
+            if (chdir(userpath) == -1)
                 printf("No such file or directory\n");
         }
         else if (chdir(cmd[1]) == -1) {
