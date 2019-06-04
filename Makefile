@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -O2 -I /usr/lib/x86_64-linux-gnu/
+CFLAGS=-g -O2 -Wall -Wpedantic -I /usr/lib/x86_64-linux-gnu/
 
 all: shell
 

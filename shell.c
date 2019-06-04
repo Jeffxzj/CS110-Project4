@@ -36,21 +36,31 @@ printPrompt() {
 
 int 
 executeBuiltInCommand(char **cmd) {
-    char *cmdList[4] = {"cd", "jobs", "exit","kill"};
     
-    if (strcmp(cmd[0],cmdList[0]) == 0) {
+    // Command "cd"
+    if (strcmp(cmd[0],Builtin[0]) == 0) {
+        // "cd " and "cd ~" change curr directory to /home/username
         if (cmd[1] == NULL || strcmp(cmd[1], "~") == 0){
             char *user = getenv("USER");
-
+            char *path = "/home/";
+            strcat(path, user);
+            if (chdir(path) == -1)
+                printf("No such file or directory\n");
         }
-        else if (chdir(cmd[1]) == -1)
-            printf("bash: cd: %s No such file or directory\n", cmd[1]);
+        else if (chdir(cmd[1]) == -1) {
+            printf("No such file or directory\n");
+        } 
     }
-    if (strcmp(cmd[0],cmdList[1]) == 0)
-        return 1;
-    if (strcmp(cmd[0],cmdList[2]) == 0)
+    // Command "exit"
+    if (strcmp(cmd[0], Builtin[1]) == 0)
         exit(0);
-    if (strcmp(cmd[0],cmdList[3]) == 0)
+    
+    // Command "jobs"
+    if (strcmp(cmd[0], Builtin[2]) == 0)
+        return 1;
+ 
+    // Command "kill"
+    if (strcmp(cmd[0], Builtin[3]) == 0)
         return 1;
 
     return 0;
@@ -66,19 +76,20 @@ main (int argc, char **argv)
         
         printPrompt();
         cmdLine = readline("$ "); //or GNU readline("");
-        cmd = parseCommand(cmdLine);
-        //add_history(cmd);
-
-        //record command in history list (GNU readline history ?)
+        info_t parsed;
+        init_parseinfo(&parsed);
+        cmd = malloc(20*sizeof(char*)); 
+        parsed.cmd = cmd;
+        parseCommand(cmdLine, &parsed);
         
-        if (isBuiltInCommand(cmd))
+        if (parsed.isBuiltin)
             executeBuiltInCommand(cmd);
         else {		
             childPid = fork();
             if (childPid == 0) {
                 execvp(cmd[0], cmd); //calls execvp  
             } else {
-                if (isBackgroundJob(cmd)) {
+                if (((parsed.flag)&1) == 1) {
                     printf("background jobs\n");
                     //record in list of background jobs
                 } else {
