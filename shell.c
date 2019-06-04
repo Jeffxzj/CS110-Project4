@@ -4,24 +4,15 @@
 #include <string.h>
 #include <syscall.h>
 #include <sys/wait.h>
+#include <readline/readline.h>
+#include <readline/history.h> 
 
 #include "parse.c"
-/*
-int 
-isBuiltInCommand(){
 
-}
-
-int 
-executeBuiltInCommand(){
-
-}
-*/
 void 
 printPrompt() {
     char *user = getenv("USER");
     char *pwd = getenv("PWD");
-    char *pwd_modified;
     char hostname[58];
     int len = strlen(user);
     gethostname(hostname, sizeof(hostname));
@@ -33,10 +24,8 @@ printPrompt() {
                 pwd[k] = pwd[k+5+len];
         }
     }
-    printf("%s@%s:%s$",user, hostname, pwd);
+    printf("%s@%s:%s",user, hostname, pwd);
 }
-
-
 
 int 
 main (int argc, char **argv)
@@ -45,12 +34,13 @@ main (int argc, char **argv)
         pid_t childPid;
         char * cmdLine;
         printPrompt();
+        cmdLine= readline("$ "); //or GNU readline("");
+        char *cmd = parseCommand(cmdLine);
 
-        cmdLine= readCommandLine(); //or GNU readline("");
-        //cmd = parseCommand(cmdLine);
+
 
         //record command in history list (GNU readline history ?)
-
+        
         if ( isBuiltInCommand(cmd)){
             executeBuiltInCommand(cmd);
         } else {		
@@ -66,4 +56,6 @@ main (int argc, char **argv)
                 }		
             }
         }
+        
+    }
 }
