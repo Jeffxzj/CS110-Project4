@@ -5,8 +5,8 @@
 #include <pwd.h>
 #include <syscall.h>
 #include <sys/wait.h>
-#include <readline/readline.h>
-#include <readline/history.h> 
+//#include <readline/readline.h>
+//#include <readline/history.h> 
 
 #include "parse.c"
 
@@ -14,6 +14,7 @@ const int max_path = 1000;
 const int max_host = 100;
 const int max_line = 100;
 
+/*
 typedef struct job_node
 {
 	int job_id;//id [1]
@@ -149,6 +150,7 @@ my_jobs(){
 		temp = temp->next;
 	}
 }
+*/
 /*
 void 
 printPrompt() {
@@ -188,7 +190,7 @@ executeBuiltInCommand(char **cmd) {
     
     // Command "jobs"
     if (strcmp(cmd[0], Builtin[2]) == 0){
-    	my_jobs();
+    	//my_jobs();
         return 1;
     }
  
@@ -277,6 +279,5 @@ main (int argc, char **argv)
         free(cmdLine);
     }
 */
-    fclose(fp);
     return 0;
 }
