@@ -4,6 +4,7 @@
 #include <string.h>
 #include <pwd.h>
 #include <syscall.h>
+#include <sys/types.h> 
 #include <sys/wait.h>
 //#include <readline/readline.h>
 //#include <readline/history.h> 
@@ -184,10 +185,11 @@ executeBuiltInCommand(char **cmd) {
         } 
         else chdir(cmd[1]);
     }
+    /*
     // Command "exit"
     if (strcmp(cmd[0], Builtin[1]) == 0)
         exit(0);
-    
+    */
     // Command "jobs"
     if (strcmp(cmd[0], Builtin[2]) == 0){
     	//my_jobs();
@@ -206,45 +208,52 @@ executeBuiltInCommand(char **cmd) {
 int 
 main (int argc, char **argv)
 {
-	int flag = 0;
+	//int flag = 0;
     //jobl.size = 0;        
     FILE *fp;
     //if (argc > 1) {
     //printf("%s",argv[1]);
     fp = fopen(argv[1], "r");
-
+    
     char *cmdLine, **cmd;
-    int i=0; 
+    cmd = malloc(50 * sizeof(char*)); 
+    cmdLine = malloc(max_line * sizeof(char));
     while (!feof(fp)){
         pid_t childPid;
         int stat_loc;
         info_t parsed;
         init_parseinfo(&parsed);
-        cmd = malloc(50 * sizeof(char*)); 
-        cmdLine = malloc(max_line * sizeof(char));
+        
         fgets(cmdLine, max_line, fp);
         parsed.cmd = cmd;
         parseCommand(cmdLine, &parsed);
         
-        if (parsed.isBuiltin)
+        if (parsed.isBuiltin) {
+            if (strcmp(cmd[0], Builtin[1]) == 0)
+                break;
             executeBuiltInCommand(cmd);
+        }
         else {
             childPid = fork();
             if (childPid == 0)
                 execvp(cmd[0], cmd); //calls execvp()
             else {
+                /*
                 if (((parsed.flag)&1) == 1) {
                     printf("background jobs\n");
                     //record in list of background jobs
                 } else {
+                */
                     waitpid(childPid, &stat_loc, WUNTRACED);
                 }		
             }
-        }
     }
     free(cmd);
     free(cmdLine);
     fclose(fp);
+    return 0;
+}
+
 /*
 	while (1) {
         pid_t childPid;
@@ -279,5 +288,3 @@ main (int argc, char **argv)
         free(cmdLine);
     }
 */
-    return 0;
-}
