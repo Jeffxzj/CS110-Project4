@@ -14,6 +14,144 @@ const int max_host = 100;
 
 char userpath[100]="/home/";
 
+typedef struct job_node
+{
+	int job_id;//id [1]
+	int process_id;
+	char* job_src;//copy the command;
+	char* status;//[running] usually
+	struct job_node* next; 
+	struct job_node* prev; 
+	int j;// = 0, if last one, = 1; last second = 2;
+}job_node;
+
+typedef struct jobs_list 
+{
+	int size;
+	job_node head;
+	job_node tail;
+}jobs_list;
+
+jobs_list jobl;
+
+
+int
+check_process(int processid){
+	job_node* temp;
+	temp = jobl.head.next;
+	if (jobl.size == 0)
+	{
+		return 0;
+	}
+	while(temp != &jobl.tail){
+		if (temp->process_id == processid)
+		{
+			return 1;
+		}
+		temp = temp->next;
+	}
+	return 0;
+}
+
+
+int  
+check_job(int num){
+	job_node* temp;
+	temp = jobl.head.next;
+	if (jobl.size == 0)
+	{
+		return 0;
+	}
+	while(temp != &jobl.tail){
+		if (temp->job_id == num)
+		{
+			return 1;
+		}
+		temp = temp->next;
+	}
+	return 0;
+}
+
+
+
+void kill_process(int processid){
+	//kill 6666
+    job_node* temp;
+	job_node* temp_prev;
+	job_node* temp_next;
+	temp = jobl.head.next;
+	if (jobl.size == 0)
+	{
+		return;
+	}
+	while(temp != &jobl.tail){
+		if (temp->process_id == processid)
+		{
+			temp_prev = temp->prev;
+			temp_next = temp->next;
+			temp_prev->next = temp_next;
+			temp_next->prev = temp_prev;
+			jobl.size--;
+			free(temp);
+			return;
+		}
+		temp = temp->next;
+	}
+}
+
+void
+kill_num(int num){
+	//kill %num 
+	//previous to this, it has been checked that if this process exists
+	job_node* temp;
+	job_node* temp_prev;
+	job_node* temp_next;
+	temp = jobl.head.next;
+	if (jobl.size == 0)
+	{
+		return;
+	}
+	while(temp != &jobl.tail){
+		if (temp->job_id == num)
+		{
+			temp_prev = temp->prev;
+			temp_next = temp->next;
+			temp_prev->next = temp_next;
+			temp_next->prev = temp_prev;
+			jobl.size--;
+			free(temp);
+			return;
+		}
+		temp = temp->next;
+	}
+}
+
+
+void 
+my_jobs(){
+	job_node* temp;
+	temp = jobl.head.next;
+	if (jobl.size == 0)
+	{
+		return;
+	}
+	while(temp != &jobl.tail){
+		if (temp->j == 0)
+		{
+			printf("[%d]   %s                 %s\n", temp->job_id,temp->status,temp->job_src);
+		}
+		else if(temp->j == 1)//+
+		{
+			printf("[%d]-  %s                 %s\n", temp->job_id,temp->status,temp->job_src);
+		}
+		else if(temp->j == 2)//-
+		{
+			printf("[%d]+  %s                 %s\n", temp->job_id,temp->status,temp->job_src);
+		}
+		temp = temp->next;
+	}
+}
+
 void 
 printPrompt() {
     char *user = getenv("USER");
@@ -59,8 +197,10 @@ executeBuiltInCommand(char **cmd) {
         exit(0);
     
     // Command "jobs"
-    if (strcmp(cmd[0], Builtin[2]) == 0)
+    if (strcmp(cmd[0], Builtin[2]) == 0){
+    	my_jobs();
         return 1;
+    }
  
     // Command "kill"
     if (strcmp(cmd[0], Builtin[3]) == 0)
@@ -72,6 +212,10 @@ executeBuiltInCommand(char **cmd) {
 int 
 main (int argc, char **argv)
 {
+	jobl.size = 0;
+
+
+
 	while (1) {
         pid_t childPid;
         int stat_loc;
