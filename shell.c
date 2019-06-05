@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <pwd.h>
 #include <syscall.h>
 #include <sys/wait.h>
 #include <readline/readline.h>
@@ -11,8 +12,7 @@
 
 const int max_path = 1000;
 const int max_host = 100;
-
-char userpath[100]="/home/";
+const int max_line = 100;
 
 typedef struct job_node
 {
@@ -54,7 +54,6 @@ check_process(int processid){
 	return 0;
 }
 
-
 int  
 check_job(int num){
 	job_node* temp;
@@ -72,8 +71,6 @@ check_job(int num){
 	}
 	return 0;
 }
-
-
 
 void kill_process(int processid){
 	//kill 6666
@@ -152,46 +149,38 @@ my_jobs(){
 		temp = temp->next;
 	}
 }
-
+/*
 void 
 printPrompt() {
-    char *user = getenv("USER");
-    int len = strlen(user);
+    struct passwd *pwuid;
+
     char path[max_path]; 
     char hostname[max_host];
+    pwuid = getpwuid(getuid());
+    int len = strlen(pwuid->pw_dir);
     // get current working directory
     if (getcwd(path, max_path) == NULL)
         printf("directory cannot be determined");
     // get host name
     gethostname(hostname, max_host);
-    // simplify /home/user with ~
-    for (int i=0; i<strlen(path); i++) {
-        if (path[i]==user[0] && path[i+len-1]==user[len-1]) {
-            path[0] = '~';
-            for (int k=1; k<strlen(path); k++)
-                path[k] = path[k+5+len];
-        }
-    }
-    printf("%s@%s:%s",user, hostname, path);
+    if (strncmp(path, pwuid->pw_dir, len) == 0)
+        printf("%s@%s:~%s", pwuid->pw_name, hostname, path+len);
+    else
+        printf("%s@%s:%s", pwuid->pw_name, hostname, path);
 }
+*/
 
 int 
 executeBuiltInCommand(char **cmd) {
-    
+    struct passwd *pwuid;
     // Command "cd"
     if (strcmp(cmd[0],Builtin[0]) == 0) {
         // "cd " and "cd ~" change curr directory to /home/username
         if (cmd[1] == NULL || strcmp(cmd[1], "~") == 0){
-            char *user = getenv("USER");
-            for (int i=0; i<strlen(user);i++)
-                userpath[i+6] = user[i];
-            //char *path = "/home/jeffxu";
-            if (chdir(userpath) == -1)
-                printf("No such file or directory\n");
-        }
-        else if (chdir(cmd[1]) == -1) {
-            printf("No such file or directory\n");
+            pwuid = getpwuid(getuid());
+            chdir(pwuid->pw_dir);
         } 
+        else chdir(cmd[1]);
     }
     // Command "exit"
     if (strcmp(cmd[0], Builtin[1]) == 0)
@@ -215,22 +204,59 @@ executeBuiltInCommand(char **cmd) {
 int 
 main (int argc, char **argv)
 {
-	jobl.size = 0;
+	int flag = 0;
+    //jobl.size = 0;        
+    FILE *fp;
+    //if (argc > 1) {
+    //printf("%s",argv[1]);
+    fp = fopen(argv[1], "r");
 
-
-
+    char *cmdLine, **cmd;
+    int i=0; 
+    while (!feof(fp)){
+        pid_t childPid;
+        int stat_loc;
+        info_t parsed;
+        init_parseinfo(&parsed);
+        cmd = malloc(50 * sizeof(char*)); 
+        cmdLine = malloc(max_line * sizeof(char));
+        fgets(cmdLine, max_line, fp);
+        parsed.cmd = cmd;
+        parseCommand(cmdLine, &parsed);
+        
+        if (parsed.isBuiltin)
+            executeBuiltInCommand(cmd);
+        else {
+            childPid = fork();
+            if (childPid == 0)
+                execvp(cmd[0], cmd); //calls execvp()
+            else {
+                if (((parsed.flag)&1) == 1) {
+                    printf("background jobs\n");
+                    //record in list of background jobs
+                } else {
+                    waitpid(childPid, &stat_loc, WUNTRACED);
+                }		
+            }
+        }
+    }
+    free(cmd);
+    free(cmdLine);
+    fclose(fp);
+/*
 	while (1) {
         pid_t childPid;
         int stat_loc;
-        char *cmdLine, **cmd;
+        char *cmdLine, **cmd; 
+        if (flag == 1) {     
+            cmdLine = malloc(max_line * sizeof(char));
+            
+        }
+        else {
+            printPrompt();
+            cmdLine = readline("$ ");
+        }
         
-        printPrompt();
-        cmdLine = readline("$ "); //or GNU readline("");
-        info_t parsed;
-        init_parseinfo(&parsed);
-        cmd = malloc(20*sizeof(char*)); 
-        parsed.cmd = cmd;
-        parseCommand(cmdLine, &parsed);
         
         if (parsed.isBuiltin)
             executeBuiltInCommand(cmd);
@@ -248,5 +274,9 @@ main (int argc, char **argv)
             }
         }
         free(cmd);
+        free(cmdLine);
     }
+*/
+    fclose(fp);
+    return 0;
 }
