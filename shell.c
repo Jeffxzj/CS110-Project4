@@ -28,6 +28,7 @@ typedef struct job_node
 typedef struct jobs_list 
 {
 	int size;
+	int cap;
 	job_node head;
 	job_node tail;
 }jobs_list;
@@ -203,8 +204,10 @@ executeBuiltInCommand(char **cmd) {
     }
  
     // Command "kill"
-    if (strcmp(cmd[0], Builtin[3]) == 0)
+    if (strcmp(cmd[0], Builtin[3]) == 0){
+
         return 1;
+    }
 
     return 0;
 }
