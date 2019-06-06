@@ -208,6 +208,53 @@ executeBuiltInCommand(char **cmd) {
 
     return 0;
 }
+/*
+void 
+executePipes(char **cmd, int *pipe_idx, int pipe_cnt) {
+    int pipe[2*pipe_cnt];
+    pid_t childpid;
+    
+    
+}
+*/
+
+void 
+executeRedirections(info_t *parsed) 
+{
+    // "<" redirection
+    if (parsed->flag & Ri) {
+        // open file in ReadOnly Mode, 
+        // if not exist create it with read/write permission
+        int fo = open(parsed->input, O_RDONLY|O_CREAT, 00666);
+        dup2(fo, STDIN_FILENO); // redirect stdin to input file fo
+        close(fo);
+    }
+    // ">" redirection
+    if (parsed->flag & Ro) {
+        int fo = open(parsed->output, O_CREAT|O_WRONLY|O_TRUNC, 00666);
+        dup2(fo, STDOUT_FILENO); // redirect stout to output file fo;
+        close(fo);
+    }
+    // ">>" redirection
+    if (parsed->flag & Roo) {
+        int fo = open(parsed->output, O_CREAT|O_WRONLY|O_APPEND, 00666);
+        dup2(fo, STDOUT_FILENO); // redirect stout to output file fo;
+        close(fo);
+    }
+    execvp(parsed->cmd[0], parsed->cmd); //calls execvp() to execute the cmd
+}
+
+void 
+cmdPrinter(char **cmd) 
+{
+    int i=0;
+    printf("cmd start with:   ");
+    while(cmd[i] != 0) {
+        printf("%s ", cmd[i]);
+        i++;
+    }
+    printf("\n");
+}
 
 int 
 main (int argc, char **argv)
@@ -217,23 +264,32 @@ main (int argc, char **argv)
     FILE *fp;
     //if (argc > 1) {
     //printf("%s",argv[1]);
-    fp = fopen(argv[1], "r");
+    fp = fopen(argv[1], "r"); // open the .sh shell script
     
     char *cmdLine, **cmd;
+    int *pipe_idx;
+    // cmd tokens after parsing
     cmd = malloc(max_line * sizeof(char*)); 
-    cmdLine = malloc(max_line * sizeof(char));
-    memset(cmd,0, max_line*sizeof(char*));
+    // piping commands indexs in cmd
+    pipe_idx = malloc(max_line * sizeof(int));
     
     while (!feof(fp)){
         pid_t childPid;
-        
+        // initialize the parse_info
         info_t parsed;
         init_parseinfo(&parsed);
-        
+        memset(cmd, 0, max_line*sizeof(char*));
+        memset(pipe_idx, 0, max_line*sizeof(int));
+        // cmdLine recieved by fgets()    
+        cmdLine = malloc(max_line * sizeof(char));
         fgets(cmdLine, max_line, fp);
         parsed.cmd = cmd;
-        parseCommand(cmdLine, &parsed);
+        // if the line is empty continue
+        if (parseCommand(cmdLine, pipe_idx, &parsed) == -1)
+            continue;
+        //mdPrinter(cmd);
         
+        // if cmd is Built-in command
         if (parsed.isBuiltin) {
             if (strcmp(cmd[0], Builtin[1]) == 0)
                 break;
@@ -243,31 +299,28 @@ main (int argc, char **argv)
         childPid = fork();
         // for the new process
         if (childPid == 0){
-            // "<" redirection
-            if (parsed.flag & Ri) {
-                // open file in ReadOnly Mode, 
-                // if not exist create it with read/write permission
-                int fo = open(parsed.input, O_RDONLY|O_CREAT, 00666);
-                dup2(fo, STDIN_FILENO); // redirect stdin to input file fo
-                close(fo);
+            // Only redirection, no pipes
+            if (parsed.isRedirect && !(parsed.flag & Pp)) {
+                //printf("fuck\n");
+                executeRedirections(&parsed);
+                continue;
             }
-            // ">" redirection
-            if (parsed.flag & Ro) {
-                int fo = open(parsed.output, O_CREAT|O_WRONLY|O_TRUNC, 00666);
-                dup2(fo, STDOUT_FILENO); // redirect stout to output file fo;
-                close(fo);
+            // if piped
+            if (parsed.flag & Pp) {
+                /*
+                printf("%d\n",parsed.num);
+                for (int k=0; k<parsed.num; k++){
+                    printf("%d ",pipe_idx[k]);
+                    printf("\n");
+                }
+                */
+                continue;
             }
-            // ">>" redirection
-            if (parsed.flag & Roo) {
-                int fo = open(parsed.output, O_CREAT|O_WRONLY|O_APPEND, 00666);
-                dup2(fo, STDOUT_FILENO); // redirect stout to output file fo;
-                close(fo);
-            }
-            execvp(cmd[0], cmd); //calls execvp()
+            // if cmd only includes redirection
+            execvp(cmd[0], cmd); //calls execvp() to execute the cmd
         }
-        
         else {
-            // if command is background
+            // if the command is background
             if (parsed.flag & Bg) {
                 printf("background jobs\n");
                 //record in list of background jobs
@@ -278,6 +331,7 @@ main (int argc, char **argv)
     }
     free(cmd);
     free(cmdLine);
+    free(pipe_idx);
     fclose(fp);
     return 0;
 }
