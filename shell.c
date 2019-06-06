@@ -321,13 +321,14 @@ main (int argc, char **argv)
         }
         else {
             // if the command is background
+            /*
             if (parsed.flag & Bg) {
-                printf("background jobs\n");
+                //printf("background jobs\n");
                 //record in list of background jobs
             } else {
-                waitpid(childPid, NULL, WUNTRACED);
-            }		
-        }
+            */
+            waitpid(childPid, NULL, WUNTRACED);
+        }		
     }
     free(cmd);
     free(cmdLine);
