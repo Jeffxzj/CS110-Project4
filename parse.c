@@ -35,8 +35,10 @@ parseCommand(char *cmdLine, int *pipe_cmd, info_t *parsed) {
     || (strcmp(cmd[0],Builtin[2])==0) || (strcmp(cmd[0],Builtin[3]))==0)
         parsed->isBuiltin = 1;
     
-    if (strcmp(cmd[cnt-1], "&") == 0)
+    if (strcmp(cmd[cnt-1], "&") == 0){
         parsed->flag |= Bg;
+        cmd[i] = NULL;
+    }
 
     while (i < cnt) {
         
@@ -44,6 +46,7 @@ parseCommand(char *cmdLine, int *pipe_cmd, info_t *parsed) {
             parsed->flag |= Pp;          // set the "pipe" flag
             pipe_cmd[parsed->num] = i+1; // record the idx of cmd next to "|" in **cmd
             parsed->num++;               // increase the command number
+            cmd[i] = NULL;
             i += 2;
             continue;
         }
@@ -51,6 +54,7 @@ parseCommand(char *cmdLine, int *pipe_cmd, info_t *parsed) {
             parsed->flag |= Ri;
             parsed->input = cmd[i+1];
             parsed->isRedirect = 1;
+            cmd[i] = NULL;
             i += 2;
             continue;
         }
@@ -58,6 +62,7 @@ parseCommand(char *cmdLine, int *pipe_cmd, info_t *parsed) {
             parsed->flag |= Ro;
             parsed->output = cmd[i+1];
             parsed->isRedirect = 1;
+            cmd[i] = NULL;
             i += 2;
             continue;
         }
@@ -65,6 +70,7 @@ parseCommand(char *cmdLine, int *pipe_cmd, info_t *parsed) {
             parsed->flag |= Roo;
             parsed->output = cmd[i+1];
             parsed->isRedirect = 1;
+            cmd[i] = NULL;
             i += 2;
             continue;
         }
