@@ -6,6 +6,9 @@
 #include <syscall.h>
 #include <sys/types.h> 
 #include <sys/wait.h>
+#include <signal.h>
+#include <fcntl.h>
+
 //#include <readline/readline.h>
 //#include <readline/history.h> 
 
@@ -22,8 +25,8 @@ typedef struct job_node
 	int process_id;
 	char* job_src;//copy the command;
 	char* status;//[running] usually
-	struct job_node* next; 
-	struct job_node* prev; 
+	job_node* next; 
+	job_node* prev; 
 	int j;// = 0, if last one, = 1; last second = 2;
 }job_node;
 
@@ -152,25 +155,26 @@ my_jobs(){
 	}
 }
 */
-/*
-void 
-printPrompt() {
-    struct passwd *pwuid;
 
-    char path[max_path]; 
-    char hostname[max_host];
-    pwuid = getpwuid(getuid());
-    int len = strlen(pwuid->pw_dir);
-    // get current working directory
-    if (getcwd(path, max_path) == NULL)
-        printf("directory cannot be determined");
-    // get host name
-    gethostname(hostname, max_host);
-    if (strncmp(path, pwuid->pw_dir, len) == 0)
-        printf("%s@%s:~%s", pwuid->pw_name, hostname, path+len);
-    else
-        printf("%s@%s:%s", pwuid->pw_name, hostname, path);
-}
+/*
+    void 
+    printPrompt() {
+        struct passwd *pwuid;
+
+        char path[max_path]; 
+        char hostname[max_host];
+        pwuid = getpwuid(getuid());
+        int len = strlen(pwuid->pw_dir);
+        // get current working directory
+        if (getcwd(path, max_path) == NULL)
+            printf("directory cannot be determined");
+        // get host name
+        gethostname(hostname, max_host);
+        if (strncmp(path, pwuid->pw_dir, len) == 0)
+            printf("%s@%s:~%s", pwuid->pw_name, hostname, path+len);
+        else
+            printf("%s@%s:%s", pwuid->pw_name, hostname, path);
+    }
 */
 
 int 
@@ -216,11 +220,13 @@ main (int argc, char **argv)
     fp = fopen(argv[1], "r");
     
     char *cmdLine, **cmd;
-    cmd = malloc(50 * sizeof(char*)); 
+    cmd = malloc(max_line * sizeof(char*)); 
     cmdLine = malloc(max_line * sizeof(char));
+    memset(cmd,0, max_line*sizeof(char*));
+    
     while (!feof(fp)){
         pid_t childPid;
-        int stat_loc;
+        
         info_t parsed;
         init_parseinfo(&parsed);
         
@@ -232,21 +238,43 @@ main (int argc, char **argv)
             if (strcmp(cmd[0], Builtin[1]) == 0)
                 break;
             executeBuiltInCommand(cmd);
+            continue;
         }
-        else {
-            childPid = fork();
-            if (childPid == 0)
-                execvp(cmd[0], cmd); //calls execvp()
-            else {
-                /*
-                if (((parsed.flag)&1) == 1) {
-                    printf("background jobs\n");
-                    //record in list of background jobs
-                } else {
-                */
-                    waitpid(childPid, &stat_loc, WUNTRACED);
-                }		
+        childPid = fork();
+        // for the new process
+        if (childPid == 0){
+            // "<" redirection
+            if (parsed.flag & Ri) {
+                // open file in ReadOnly Mode, 
+                // if not exist create it with read/write permission
+                int fo = open(parsed.input, O_RDONLY|O_CREAT, 00666);
+                dup2(fo, STDIN_FILENO); // redirect stdin to input file fo
+                close(fo);
             }
+            // ">" redirection
+            if (parsed.flag & Ro) {
+                int fo = open(parsed.output, O_CREAT|O_WRONLY|O_TRUNC, 00666);
+                dup2(fo, STDOUT_FILENO); // redirect stout to output file fo;
+                close(fo);
+            }
+            // ">>" redirection
+            if (parsed.flag & Roo) {
+                int fo = open(parsed.output, O_CREAT|O_WRONLY|O_APPEND, 00666);
+                dup2(fo, STDOUT_FILENO); // redirect stout to output file fo;
+                close(fo);
+            }
+            execvp(cmd[0], cmd); //calls execvp()
+        }
+        
+        else {
+            // if command is background
+            if (parsed.flag & Bg) {
+                printf("background jobs\n");
+                //record in list of background jobs
+            } else {
+                waitpid(childPid, NULL, WUNTRACED);
+            }		
+        }
     }
     free(cmd);
     free(cmdLine);
