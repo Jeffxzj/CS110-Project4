@@ -8,7 +8,6 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <fcntl.h>
-
 //#include <readline/readline.h>
 //#include <readline/history.h> 
 
@@ -19,141 +18,141 @@ const int max_host = 100;
 const int max_line = 100;
 
 /*
-typedef struct job_node
-{
-	int job_id;//id [1]
-	int process_id;
-	char* job_src;//copy the command;
-	char* status;//[running] usually
-	job_node* next; 
-	job_node* prev; 
-	int j;// = 0, if last one, = 1; last second = 2;
-}job_node;
+    typedef struct job_node
+    {
+        int job_id;//id [1]
+        int process_id;
+        char* job_src;//copy the command;
+        char* status;//[running] usually
+        job_node* next; 
+        job_node* prev; 
+        int j;// = 0, if last one, = 1; last second = 2;
+    }job_node;
 
-typedef struct jobs_list 
-{
-	int size;
-	int cap;
-	job_node head;
-	job_node tail;
-}jobs_list;
+    typedef struct jobs_list 
+    {
+        int size;
+        int cap;
+        job_node head;
+        job_node tail;
+    }jobs_list;
 
-jobs_list jobl;
-
-
-int
-check_process(int processid){
-	job_node* temp;
-	temp = jobl.head.next;
-	if (jobl.size == 0)
-	{
-		return 0;
-	}
-	while(temp != &jobl.tail){
-		if (temp->process_id == processid)
-		{
-			return 1;
-		}
-		temp = temp->next;
-	}
-	return 0;
-}
-
-int  
-check_job(int num){
-	job_node* temp;
-	temp = jobl.head.next;
-	if (jobl.size == 0)
-	{
-		return 0;
-	}
-	while(temp != &jobl.tail){
-		if (temp->job_id == num)
-		{
-			return 1;
-		}
-		temp = temp->next;
-	}
-	return 0;
-}
-
-void kill_process(int processid){
-	//kill 6666
-    job_node* temp;
-	job_node* temp_prev;
-	job_node* temp_next;
-	temp = jobl.head.next;
-	if (jobl.size == 0)
-	{
-		return;
-	}
-	while(temp != &jobl.tail){
-		if (temp->process_id == processid)
-		{
-			temp_prev = temp->prev;
-			temp_next = temp->next;
-			temp_prev->next = temp_next;
-			temp_next->prev = temp_prev;
-			jobl.size--;
-			free(temp);
-			return;
-		}
-		temp = temp->next;
-	}
-}
-
-void
-kill_num(int num){
-	//kill %num 
-	//previous to this, it has been checked that if this process exists
-	job_node* temp;
-	job_node* temp_prev;
-	job_node* temp_next;
-	temp = jobl.head.next;
-	if (jobl.size == 0)
-	{
-		return;
-	}
-	while(temp != &jobl.tail){
-		if (temp->job_id == num)
-		{
-			temp_prev = temp->prev;
-			temp_next = temp->next;
-			temp_prev->next = temp_next;
-			temp_next->prev = temp_prev;
-			jobl.size--;
-			free(temp);
-			return;
-		}
-		temp = temp->next;
-	}
-}
+    jobs_list jobl;
 
 
-void 
-my_jobs(){
-	job_node* temp;
-	temp = jobl.head.next;
-	if (jobl.size == 0)
-	{
-		return;
-	}
-	while(temp != &jobl.tail){
-		if (temp->j == 0)
-		{
-			printf("[%d]   %s                 %s\n", temp->job_id,temp->status,temp->job_src);
-		}
-		else if(temp->j == 1)//+
-		{
-			printf("[%d]-  %s                 %s\n", temp->job_id,temp->status,temp->job_src);
-		}
-		else if(temp->j == 2)//-
-		{
-			printf("[%d]+  %s                 %s\n", temp->job_id,temp->status,temp->job_src);
-		}
-		temp = temp->next;
-	}
-}
+    int
+    check_process(int processid){
+        job_node* temp;
+        temp = jobl.head.next;
+        if (jobl.size == 0)
+        {
+            return 0;
+        }
+        while(temp != &jobl.tail){
+            if (temp->process_id == processid)
+            {
+                return 1;
+            }
+            temp = temp->next;
+        }
+        return 0;
+    }
+
+    int  
+    check_job(int num){
+        job_node* temp;
+        temp = jobl.head.next;
+        if (jobl.size == 0)
+        {
+            return 0;
+        }
+        while(temp != &jobl.tail){
+            if (temp->job_id == num)
+            {
+                return 1;
+            }
+            temp = temp->next;
+        }
+        return 0;
+    }
+
+    void kill_process(int processid){
+        //kill 6666
+        job_node* temp;
+        job_node* temp_prev;
+        job_node* temp_next;
+        temp = jobl.head.next;
+        if (jobl.size == 0)
+        {
+            return;
+        }
+        while(temp != &jobl.tail){
+            if (temp->process_id == processid)
+            {
+                temp_prev = temp->prev;
+                temp_next = temp->next;
+                temp_prev->next = temp_next;
+                temp_next->prev = temp_prev;
+                jobl.size--;
+                free(temp);
+                return;
+            }
+            temp = temp->next;
+        }
+    }
+
+    void
+    kill_num(int num){
+        //kill %num 
+        //previous to this, it has been checked that if this process exists
+        job_node* temp;
+        job_node* temp_prev;
+        job_node* temp_next;
+        temp = jobl.head.next;
+        if (jobl.size == 0)
+        {
+            return;
+        }
+        while(temp != &jobl.tail){
+            if (temp->job_id == num)
+            {
+                temp_prev = temp->prev;
+                temp_next = temp->next;
+                temp_prev->next = temp_next;
+                temp_next->prev = temp_prev;
+                jobl.size--;
+                free(temp);
+                return;
+            }
+            temp = temp->next;
+        }
+    }
+
+
+    void 
+    my_jobs(){
+        job_node* temp;
+        temp = jobl.head.next;
+        if (jobl.size == 0)
+        {
+            return;
+        }
+        while(temp != &jobl.tail){
+            if (temp->j == 0)
+            {
+                printf("[%d]   %s                 %s\n", temp->job_id,temp->status,temp->job_src);
+            }
+            else if(temp->j == 1)//+
+            {
+                printf("[%d]-  %s                 %s\n", temp->job_id,temp->status,temp->job_src);
+            }
+            else if(temp->j == 2)//-
+            {
+                printf("[%d]+  %s                 %s\n", temp->job_id,temp->status,temp->job_src);
+            }
+            temp = temp->next;
+        }
+    }
 */
 
 /*
@@ -208,15 +207,48 @@ executeBuiltInCommand(char **cmd) {
 
     return 0;
 }
-/*
+
 void 
-executePipes(char **cmd, int *pipe_idx, int pipe_cnt) {
-    int pipe[2*pipe_cnt];
+executePipes(char **cmd, int *pipe_idx, int cmd_cnt) 
+{
+    // pipe number is always 1 less than cmd number
+    int pipe_cnt = cmd_cnt - 1; 
+    int pipefd[2*pipe_cnt]; 
     pid_t childpid;
-    
-    
+
+    // initialize all the read/write file descriptions
+    for (int i=0; i<pipe_cnt; i++) {
+        pipe(pipefd+2*i);
+    }
+    int j = 0;
+    for (int i=0; i<cmd_cnt; i++) {
+        childpid = fork();
+        if (childpid == 0) {
+            // if not last command
+            if (i != pipe_cnt) {
+                // redirect stdout with input of 
+                dup2(pipefd[j+1], STDOUT_FILENO);
+            }
+            // if not first command
+            if (i != 0) {
+                // redirect stdin with output of prev cmd
+                dup2(pipefd[j-2], STDIN_FILENO);
+            }
+
+            for (int k=0; k<2*pipe_cnt; k++)
+                close(pipefd[k]);
+            
+            execvp(cmd[pipe_idx[i]], cmd+pipe_idx[i]);
+        }            
+        j += 2; // go to next group of FO
+    }
+    // close all the file descriptions
+    for (int i=0; i<2*pipe_cnt; i++)
+        close(pipefd[i]);
+    for (int i=0; i<cmd_cnt; i++)
+        waitpid(childpid, NULL, WUNTRACED);
+
 }
-*/
 
 void 
 executeRedirections(info_t *parsed) 
@@ -301,22 +333,21 @@ main (int argc, char **argv)
         if (childPid == 0){
             // Only redirection, no pipes
             if (parsed.isRedirect && !(parsed.flag & Pp)) {
-                //printf("fuck\n");
                 executeRedirections(&parsed);
                 continue;
             }
             // if piped
             if (parsed.flag & Pp) {
-                /*
+/*
                 printf("%d\n",parsed.num);
                 for (int k=0; k<parsed.num; k++){
                     printf("%d ",pipe_idx[k]);
                     printf("\n");
                 }
-                */
+*/
+                executePipes(cmd, pipe_idx, parsed.num);
                 continue;
             }
-            // if cmd only includes redirection
             execvp(cmd[0], cmd); //calls execvp() to execute the cmd
         }
         else {
@@ -336,38 +367,3 @@ main (int argc, char **argv)
     fclose(fp);
     return 0;
 }
-
-/*
-	while (1) {
-        pid_t childPid;
-        int stat_loc;
-        char *cmdLine, **cmd; 
-        if (flag == 1) {     
-            cmdLine = malloc(max_line * sizeof(char));
-            
-        }
-        else {
-            printPrompt();
-            cmdLine = readline("$ ");
-        }
-        
-        
-        if (parsed.isBuiltin)
-            executeBuiltInCommand(cmd);
-        else {		
-            childPid = fork();
-            if (childPid == 0) {
-                execvp(cmd[0], cmd); //calls execvp  
-            } else {
-                if (((parsed.flag)&1) == 1) {
-                    printf("background jobs\n");
-                    //record in list of background jobs
-                } else {
-                    waitpid (childPid, &stat_loc, WUNTRACED);
-                }		
-            }
-        }
-        free(cmd);
-        free(cmdLine);
-    }
-*/
