@@ -15,7 +15,9 @@
 
 const int max_path = 1000;
 const int max_host = 100;
-const int max_line = 100;
+const int max_line = 100;\
+
+
 
 /*
     typedef struct job_node
@@ -212,6 +214,7 @@ void
 executePipes(char **cmd, int *pipe_idx, int cmd_cnt) 
 {
     // pipe number is always 1 less than cmd number
+    int stat_loc;
     int pipe_cnt = cmd_cnt - 1; 
     int pipefd[2*pipe_cnt]; 
     pid_t childpid;
@@ -246,7 +249,8 @@ executePipes(char **cmd, int *pipe_idx, int cmd_cnt)
     for (int i=0; i<2*pipe_cnt; i++)
         close(pipefd[i]);
     for (int i=0; i<cmd_cnt; i++)
-        waitpid(childpid, NULL, WUNTRACED);
+        waitpid(childpid, NULL, 0);
+    //exit(0);
 
 }
 
@@ -304,9 +308,9 @@ main (int argc, char **argv)
     cmd = malloc(max_line * sizeof(char*)); 
     // piping commands indexs in cmd
     pipe_idx = malloc(max_line * sizeof(int));
+    pid_t childPid;
     
     while (!feof(fp)){
-        pid_t childPid;
         // initialize the parse_info
         info_t parsed;
         init_parseinfo(&parsed);
@@ -329,37 +333,37 @@ main (int argc, char **argv)
             continue;
         }
         childPid = fork();
-        // for the new process
+
+
+        // for the child process
         if (childPid == 0){
             // Only redirection, no pipes
             if (parsed.isRedirect && !(parsed.flag & Pp)) {
                 executeRedirections(&parsed);
                 continue;
             }
-            // if piped
             if (parsed.flag & Pp) {
-/*
-                printf("%d\n",parsed.num);
-                for (int k=0; k<parsed.num; k++){
-                    printf("%d ",pipe_idx[k]);
-                    printf("\n");
-                }
-*/
                 executePipes(cmd, pipe_idx, parsed.num);
-                continue;
+                break;
             }
             execvp(cmd[0], cmd); //calls execvp() to execute the cmd
         }
+        else
+            waitpid(childPid, NULL, 0);
+        
+        // for the parent process
+        /*
         else {
-            // if the command is background
-            /*
-            if (parsed.flag & Bg) {
-                //printf("background jobs\n");
-                //record in list of background jobs
-            } else {
-            */
-            waitpid(childPid, NULL, WUNTRACED);
-        }		
+            // if piped
+            if (parsed.flag & Pp) {
+                executePipes(cmd, pipe_idx, parsed.num);
+                //waitpid(childPid, NULL, 0);
+
+                continue;
+            }
+            waitpid(childPid, NULL, 0);
+        }
+        */		
     }
     free(cmd);
     free(cmdLine);
