@@ -50,6 +50,7 @@ init_jobl()
 {	
 	jobl.size = 0;
 	jobl.cap = 0;
+    jobl.head.job_id = 0;
 	jobl.head.next = &jobl.tail;
 	jobl.tail.prev = &jobl.head;
 	jobl.status[0] = Running;
@@ -85,10 +86,12 @@ addjob(pid_t id, char* command)
 {
 	job_node* new_job = malloc(sizeof(job_node));
     new_job->job_src = malloc(max_line*sizeof(char));
+    /*
     if (jobl.size == 0)
         new_job->job_id = 1;
     else
-        new_job->job_id = jobl.cap;
+    */
+    new_job->job_id = jobl.tail.prev->job_id + 1;
 	new_job->process_id = id;
 	new_job->status = jobl.status[0];
 	
@@ -110,30 +113,23 @@ void
 jobs_maintain()
 {   
     //check every job if they have been done.
-	job_node* temp;
-	temp = jobl.head.next;
-	if (jobl.size == 0)
-        return;
+	if (jobl.size == 0) return;
+    job_node* temp = jobl.head.next;
+
 	while(temp != &jobl.tail){
 		pid_t pid = temp->process_id;
 		if (temp->need_to_be_del)
 		{   
             //child process ended and need to be deleted
 			job_node *prev = temp->prev;
-			jobl.size--;
 			job_node *next = temp->next;
 			prev->next = next;
 			next->prev = prev;
-			free(temp);
+			free(temp->job_src);
+            free(temp);
+			jobl.size--;
 			maintainjobl_j();
 		}
-/*
-		else if (waitpid(pid, NULL, WNOHANG)&& (temp->need_to_be_del == 0))
-		{
-			temp->need_to_be_del = 1;
-            temp->status = Done;
-		}
-*/
         else if (kill(temp->process_id, 0) < 0 && (temp->need_to_be_del == 0)){
             temp->status = Done;
             temp->need_to_be_del = 1;
@@ -144,7 +140,7 @@ jobs_maintain()
 }
 
 
-void my_jobs()
+void print_jobs() 
 {
     //first check every pid and maintain the jobl(free)
 	//then maintain j
@@ -162,11 +158,12 @@ void my_jobs()
         if (temp->j == 2)
             printf("[%d]-  %s", temp->job_id, temp->status);
         if (temp->status == "Running")
-            printf("                 %s&\n", temp->job_src);
+            printf("                 %s &\n", temp->job_src);
         if (temp->status == "Done")
             printf("                    %s\n", temp->job_src);
 		temp = temp->next;
 	}
+    jobs_maintain();
     return;
 }
 
@@ -185,7 +182,7 @@ executeBuiltInCommand(char **cmd)
     }
     // Command "jobs"
     if (strcmp(cmd[0], Builtin[2]) == 0){
-    	my_jobs();
+    	print_jobs() ;
         return 1;
     }
     // Command "kill"
@@ -320,8 +317,8 @@ main (int argc, char **argv)
 
         childPid = fork();
 
-        if (parsed.flag & Bg)
-            addjob(childPid, cmd_cpy);
+        //if (parsed.flag & Bg)
+            //addjob(childPid, cmd_cpy);
         // for the child  process
         if (childPid == 0) {
             // if command redirected
@@ -339,8 +336,10 @@ main (int argc, char **argv)
         // for parent process
         else {
             // if the command is background
-            if (parsed.flag & Bg)
+            if (parsed.flag & Bg){
+                addjob(childPid, cmd_cpy);
                 signal(SIGCHLD, SIG_IGN);
+            }
             else
                 waitpid(childPid, NULL, WUNTRACED);
         }
