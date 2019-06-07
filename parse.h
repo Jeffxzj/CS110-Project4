@@ -26,6 +26,6 @@ typedef struct Parse_info {
 void init_parseinfo(info_t *info);
 /* Parsing function to parse the commands into tokens and set the parse_info
 return 0 if success, -1 if cmdLine is empty */
-int parseCommand(char *cmdLine, int *pipe_cmd, info_t *parsed);
+int parseCommand(char *cmdLine, char *cmd_cpy, int *pipe_cmd, info_t *parsed);
 
 #endif

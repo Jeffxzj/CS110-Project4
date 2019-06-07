@@ -15,10 +15,11 @@ init_parseinfo(info_t *info) {
 }
 
 int
-parseCommand(char *cmdLine, int *pipe_cmd, info_t *parsed) {
+parseCommand(char *cmdLine, char *cmd_cpy, int *pipe_cmd, info_t *parsed) {
     
     char *ignore = " ";                    // seperate cmds by space
-    cmdLine = strtok(cmdLine, "\n");       // get rid of "\n" at the end
+    cmdLine = strtok(cmdLine, "\n"); // get rid of "\n" at the end
+    cmd_cpy = strtok(cmd_cpy, "\n"); // get rid of "\n" at the end
     char *token = strtok(cmdLine, ignore);
     int cnt = 0, i = 0;
     while (token) {
@@ -37,11 +38,18 @@ parseCommand(char *cmdLine, int *pipe_cmd, info_t *parsed) {
     
     if (strcmp(cmd[cnt-1], "&") == 0){
         parsed->flag |= Bg;
-        cmd[i] = NULL;
+        //printf("background\n");
+        cmd[cnt-1] = NULL;            
+        //printf("before %s\n",cmd_cpy);
+        cmd_cpy[strlen(cmd_cpy)-1] = '\0';
+        //printf("after %s\n",cmd_cpy);
+
     }
 
     while (i < cnt) {
         
+        if (cmd[i] == NULL)
+            break;
         if (strcmp(cmd[i], "|") == 0) {
             parsed->flag |= Pp;          // set the "pipe" flag
             pipe_cmd[parsed->num] = i+1; // record the idx of cmd next to "|" in **cmd
