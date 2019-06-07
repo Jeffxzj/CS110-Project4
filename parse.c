@@ -38,12 +38,8 @@ parseCommand(char *cmdLine, char *cmd_cpy, int *pipe_cmd, info_t *parsed) {
     
     if (strcmp(cmd[cnt-1], "&") == 0){
         parsed->flag |= Bg;
-        //printf("background\n");
         cmd[cnt-1] = NULL;            
-        //printf("before %s\n",cmd_cpy);
-        cmd_cpy[strlen(cmd_cpy)-1] = '\0';
-        //printf("after %s\n",cmd_cpy);
-
+        cmd_cpy[strlen(cmd_cpy)-2] = '\0';
     }
 
     while (i < cnt) {

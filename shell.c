@@ -302,10 +302,8 @@ main (int argc, char **argv)
         cmdLine = malloc(max_line * sizeof(char));
         
         fgets(cmdLine, max_line, fp);
-        //printf("%s",cmdLine);
         char cmd_cpy[strlen(cmdLine)+1];
         strcpy(cmd_cpy, cmdLine);            
-        //printf("%s",cmd_cpy);
 
         parsed.cmd = cmd;
         // if the line is empty continue
@@ -334,16 +332,15 @@ main (int argc, char **argv)
             // if command piped
             if (parsed.flag & Pp) {
                 executePipes(cmd, pipe_idx, parsed.num);
-                continue;
+                break;
             }
             execvp(cmd[0], cmd); //calls execvp() to execute the cmd
         }
         // for parent process
         else {
             // if the command is background
-            if (parsed.flag & Bg) {
+            if (parsed.flag & Bg)
                 signal(SIGCHLD, SIG_IGN);
-            } 
             else
                 waitpid(childPid, NULL, WUNTRACED);
         }
